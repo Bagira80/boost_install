@@ -18,6 +18,11 @@
 # header-only libraries. An alias, Boost::boost, for Boost::headers is
 # provided for compatibility.
 #
+# A special component "all" is availabe which when listed in the call to
+# find_package instructs this configuration file to search for all components.
+# Additionally, a variable BOOST_ALL_TARGETS will then be set, too, which
+# contains the names of all created targets.
+#
 # Since Boost libraries can coexist in many variants - 32/64 bit,
 # static/dynamic runtime, debug/release, the following variables can be used
 # to control which variant is chosen:
@@ -132,6 +137,7 @@ macro(boost_find_component comp req)
   if(__boost_comp_found)
 
     list(APPEND Boost_LIBRARIES Boost::${__boost_comp_nv})
+    list(REMOVE_DUPLICATES Boost_LIBRARIES)
     set(Boost_${_BOOST_COMP}_LIBRARY Boost::${__boost_comp_nv})
 
     if(NOT "${comp}" STREQUAL "${__boost_comp_nv}" AND NOT TARGET Boost::${comp})
@@ -150,6 +156,60 @@ macro(boost_find_component comp req)
   unset(__boost_comp_nv)
   unset(__boost_comp_found)
   unset(_BOOST_COMP)
+
+endmacro()
+
+macro(boost_find_all_components req)
+
+  if(Boost_DEBUG)
+    if(${req})
+      message(STATUS "BoostConfig: All components are required.")
+    else()
+      message(STATUS "BoostConfig: All components are optionally requested.")
+    endif()
+  endif()
+
+  # Search for all available component-configuration directories...
+  file(GLOB __boost_all_components
+       LIST_DIRECTORIES true RELATIVE "${CMAKE_CURRENT_LIST_DIR}/.."
+       "${CMAKE_CURRENT_LIST_DIR}/../boost_*-${Boost_VERSION}")
+  # ...and extract component names from it.
+  string(REGEX REPLACE "boost_([_a-z0-9]+)-${Boost_VERSION}" "\\1"
+         __boost_all_components "${__boost_all_components}")
+  list(REMOVE_ITEM __boost_all_components "headers")
+  list(LENGTH __boost_all_components __boost_all_components_count)
+
+  if(${__boost_all_components_count} EQUAL 0 AND ${req})
+    message(SEND_ERROR "BoostConfig: No components available (although all are required)!")
+  endif()
+
+  if(Boost_DEBUG AND Boost_VERBOSE)
+    if(${__boost_all_components_count} EQUAL 0)
+      message(STATUS "BoostConfig: Following components will be searched: N/A")
+    else()
+      message(STATUS "BoostConfig: Following components will be searched:")
+      foreach(__boost_comp IN LISTS __boost_all_components)
+        message(STATUS "  ${__boost_comp}")
+      endforeach()
+    endif()
+  endif()
+
+  # Try to find each component.
+  foreach(__boost_comp IN LISTS __boost_all_components)
+
+    boost_find_component(${__boost_comp} ${req})
+
+    # Append to list of all targets (if found).
+    string(TOUPPER ${__boost_comp} _BOOST_COMP)
+    if(Boost_${_BOOST_COMP}_FOUND)
+      list(APPEND Boost_ALL_TARGETS Boost::${__boost_comp})
+    endif()
+
+  endforeach()
+
+  unset(_BOOST_COMP)
+  unset(__boost_all_components_count)
+  unset(__boost_all_components)
 
 endmacro()
 
@@ -180,7 +240,19 @@ set(Boost_LIBRARIES "")
 
 # Find components
 
+if("all" IN_LIST Boost_FIND_COMPONENTS)
+
+  set(Boost_ALL_TARGETS Boost::headers)
+
+  boost_find_all_components(${Boost_FIND_REQUIRED_all})
+
+endif()
+
 foreach(__boost_comp IN LISTS Boost_FIND_COMPONENTS)
+
+  if(${__boost_comp} STREQUAL "all" OR TARGET Boost::${__boost_comp})
+    continue()
+  endif()
 
   boost_find_component(${__boost_comp} ${Boost_FIND_REQUIRED_${__boost_comp}})
 
