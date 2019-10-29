@@ -18,8 +18,13 @@
 # header-only libraries. An alias, Boost::boost, for Boost::headers is
 # provided for compatibility.
 #
-# A special component "all" is availabe which when listed in the call to
-# find_package instructs this configuration file to search for all components.
+# If only header-only libraries should be requested, the "headers" component
+# should be listed explicitly, as shown next:
+#
+# find_package(Boost 1.70 REQUIRED COMPONENTS headers PATHS C:/Boost)
+#
+# For requesting all components you can just omit the COMPONENTS part in the
+# call to find_package.
 # Additionally, a variable BOOST_ALL_TARGETS will then be set, too, which
 # contains the names of all created targets.
 #
@@ -240,23 +245,25 @@ set(Boost_LIBRARIES "")
 
 # Find components
 
-if("all" IN_LIST Boost_FIND_COMPONENTS)
+if(NOT Boost_FIND_COMPONENTS)
 
   set(Boost_ALL_TARGETS Boost::headers)
 
-  boost_find_all_components(${Boost_FIND_REQUIRED_all})
+  boost_find_all_components(${Boost_FIND_REQUIRED})
+
+else()
+
+  foreach(__boost_comp IN LISTS Boost_FIND_COMPONENTS)
+
+    if(${__boost_comp} STREQUAL "headers" OR TARGET Boost::${__boost_comp})
+      continue()
+    endif()
+
+    boost_find_component(${__boost_comp} ${Boost_FIND_REQUIRED_${__boost_comp}})
+
+  endforeach()
 
 endif()
-
-foreach(__boost_comp IN LISTS Boost_FIND_COMPONENTS)
-
-  if(${__boost_comp} STREQUAL "all" OR TARGET Boost::${__boost_comp})
-    continue()
-  endif()
-
-  boost_find_component(${__boost_comp} ${Boost_FIND_REQUIRED_${__boost_comp}})
-
-endforeach()
 
 # Compatibility targets
 
