@@ -18,7 +18,7 @@
 # header-only libraries. An alias, Boost::boost, for Boost::headers is
 # provided for compatibility.
 #
-# A special component "all" is availabe which when listed in the call to
+# A special component "ALL" is availabe which when listed in the call to
 # find_package instructs this configuration file to search for all components.
 # Additionally, a variable BOOST_ALL_TARGETS will then be set, too, which
 # contains the names of all created targets.
@@ -26,7 +26,7 @@
 # The recommended syntax would then be the following (omitting the COMPONENTS
 # keyword which is optional if the REQUIRED keyword is given).
 #
-# find_package(Boost 1.70 REQUIRED all PATHS C:/Boost)
+# find_package(Boost 1.70 REQUIRED ALL PATHS C:/Boost)
 #
 # Since Boost libraries can coexist in many variants - 32/64 bit,
 # static/dynamic runtime, debug/release, the following variables can be used
@@ -188,8 +188,8 @@ macro(boost_find_all_components req)
 
     message(SEND_ERROR "BoostConfig: No components (except for 'headers') available although all are required!")
 
-    set(Boost_all_FOUND 0)
-    set(Boost_all_NOT_FOUND_MESSAGE "No components (except for 'headers') available although all are required)!")
+    set(Boost_ALL_FOUND 0)
+    set(Boost_ALL_NOT_FOUND_MESSAGE "No components (except for 'headers') available although all are required)!")
 
     return()
 
@@ -252,17 +252,17 @@ set(Boost_LIBRARIES "")
 
 # Find components
 
-if("all" IN_LIST Boost_FIND_COMPONENTS)
+if("ALL" IN_LIST Boost_FIND_COMPONENTS)
 
   set(Boost_ALL_TARGETS Boost::headers)
 
-  boost_find_all_components(${Boost_FIND_REQUIRED_all})
+  boost_find_all_components(${Boost_FIND_REQUIRED_ALL})
 
 endif()
 
 foreach(__boost_comp IN LISTS Boost_FIND_COMPONENTS)
 
-  if(${__boost_comp} STREQUAL "all" OR TARGET Boost::${__boost_comp})
+  if(${__boost_comp} STREQUAL "ALL" OR TARGET Boost::${__boost_comp})
     continue()
   endif()
 
@@ -283,11 +283,11 @@ if(NOT TARGET Boost::boost)
   add_library(Boost::dynamic_linking INTERFACE IMPORTED)
 
   # Just in case this script was triggered by FindBoost.
-  if("all" IN_LIST Boost_FIND_COMPONENTS)
+  if("ALL" IN_LIST Boost_FIND_COMPONENTS)
     # FindPackageHandleStandardArgs expects <package>_<component>_FOUND for all components.
-    set(Boost_all_FOUND ${Boost_headers_FOUND})
+    set(Boost_ALL_FOUND ${Boost_headers_FOUND})
     # FindBoost expects imported targets for all components.
-    add_library(Boost::all INTERFACE IMPORTED)
+    add_library(Boost::ALL INTERFACE IMPORTED)
   endif()
 
 endif()
