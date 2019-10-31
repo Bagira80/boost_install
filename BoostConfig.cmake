@@ -23,6 +23,11 @@
 # Additionally, a variable BOOST_ALL_TARGETS will then be set, too, which
 # contains the names of all created targets.
 #
+# The recommended syntax would then be the following (omitting the COMPONENTS
+# keyword which is optional if the REQUIRED keyword is given).
+#
+# find_package(Boost 1.70 REQUIRED all PATHS C:/Boost)
+#
 # Since Boost libraries can coexist in many variants - 32/64 bit,
 # static/dynamic runtime, debug/release, the following variables can be used
 # to control which variant is chosen:
@@ -180,7 +185,14 @@ macro(boost_find_all_components req)
   list(LENGTH __boost_all_components __boost_all_components_count)
 
   if(${__boost_all_components_count} EQUAL 0 AND ${req})
-    message(SEND_ERROR "BoostConfig: No components available (although all are required)!")
+
+    message(SEND_ERROR "BoostConfig: No components (except for 'headers') available although all are required!")
+
+    set(Boost_all_FOUND 0)
+    set(Boost_all_NOT_FOUND_MESSAGE "No components (except for 'headers') available although all are required)!")
+
+    return()
+
   endif()
 
   if(Boost_DEBUG AND Boost_VERBOSE)
@@ -269,5 +281,13 @@ if(NOT TARGET Boost::boost)
   add_library(Boost::diagnostic_definitions INTERFACE IMPORTED)
   add_library(Boost::disable_autolinking INTERFACE IMPORTED)
   add_library(Boost::dynamic_linking INTERFACE IMPORTED)
+
+  # Just in case this script was triggered by FindBoost.
+  if("all" IN_LIST Boost_FIND_COMPONENTS)
+    # FindPackageHandleStandardArgs expects <package>_<component>_FOUND for all components.
+    set(Boost_all_FOUND ${Boost_headers_FOUND})
+    # FindBoost expects imported targets for all components.
+    add_library(Boost::all INTERFACE IMPORTED)
+  endif()
 
 endif()
